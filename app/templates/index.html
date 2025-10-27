@@ -1,66 +1,28 @@
-[D<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChronoSearch – Upload CSV</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="/static/favicon.ico" />
-</head>
-<body class="bg-gray-950 text-gray-200 flex flex-col items-center justify-center min-h-screen font-sans">
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from app.datara.routes import router as datara_router
 
-  <!-- Header -->
-  <div class="text-center mb-10">
-    <h1 class="text-4xl font-bold mb-2 text-blue-400">ChronoSearch</h1>
-    <p class="text-gray-400 text-sm tracking-wide">Upload your data to start searching intelligently</p>
-  </div>
+app = FastAPI(title="ChronoSearch - Data Search App")
 
-  <!-- Upload Card -->
-  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl w-full max-w-md">
-    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data" class="flex flex-col items-center">
-      <label class="w-full flex flex-col items-center px-4 py-6 bg-gray-800 rounded-lg shadow-lg tracking-wide border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
-        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l-3 3m3-3l3 3"></path>
-        </svg>
-        <span class="mt-2 text-sm text-gray-300">Select a CSV file</span>
-        <input type="file" name="file" class="hidden" required />
-      </label>
+# Include your router
+app.include_router(datara_router)
 
-      <button type="submit" class="mt-6 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl shadow-md transition">Upload</button>
-    </form>
+# Mount static folder
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-    <!-- Response -->
-    <div id="response" class="mt-6 text-sm text-center text-green-400 hidden"></div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="mt-10 text-xs text-gray-600">
-    Built with ❤️ by Vaishnavi · ChronoSearch v1.0
-  </footer>
-
-  <!-- JS to handle async upload -->
-  <script>
-    const form = document.getElementById('uploadForm');
-    const responseBox = document.getElementById('response');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      responseBox.classList.remove('hidden');
-      responseBox.textContent = "Uploading...";
-      try {
-        const res = await fetch('/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (res.ok) {
-          responseBox.textContent = "✅ File uploaded successfully!";
-        } else {
-          responseBox.textContent = "❌ Error: " + (data.detail || 'Something went wrong');
-        }
-      } catch {
-        responseBox.textContent = "⚠️ Upload failed. Check server logs.";
-      }
-    });
-  </script>
-
-</body>
-</html>
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """
+    <html>
+    <head><title>ChronoSearch</title></head>
+    <body style="font-family:Arial;text-align:center;margin-top:40px;">
+    <h1>Welcome to ChronoSearch</h1>
+    <p>Upload and search your data easily.</p>
+    <a href="/upload" 
+       style="background:#007bff;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
+       Go to Dashboard
+    </a>
+    </body>
+    </html>
+    """

@@ -1,21 +1,28 @@
-from fastapi import APIRouter, UploadFile, Form
-import pandas as pd
-from app.datara.search_engine import search_data
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from app.datara.routes import router as datara_router
 
-router = APIRouter()
+app = FastAPI(title="ChronoSearch - Data Search App")
 
-data_storage = {}  # folder_name -> DataFrame
+# Include your router
+app.include_router(datara_router)
 
-@router.post("/upload")
-async def upload_csv(file: UploadFile):
-    df = pd.read_csv(file.file)
-    data_storage[file.filename] = df
-    return {"message": f"{file.filename} uploaded successfully", "rows": len(df)}
+# Mount static folder
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-@router.get("/search")
-async def search(q: str, filename: str):
-    if filename not in data_storage:
-        return {"error": "File not found"}
-    df = data_storage[filename]
-    results = search_data(df, q)
-    return {"results": results[:10]}
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """
+    <html>
+    <head><title>ChronoSearch</title></head>
+    <body style="font-family:Arial;text-align:center;margin-top:40px;">
+    <h1>Welcome to ChronoSearch</h1>
+    <p>Upload and search your data easily.</p>
+    <a href="/upload" 
+       style="background:#007bff;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
+       Go to Dashboard
+    </a>
+    </body>
+    </html>
+    """
