@@ -1,31 +1,24 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-from app.datara.routes import router as datara_router
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from app.datara.routes import router
 
-app = FastAPI(title="ChronoSearch - Data Search App")
+app = FastAPI(title="ChronoSearch")
 
-# Mount router
-app.include_router(datara_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Mount static directory for CSS, JS, etc.
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory="app/datara/static"), name="static")
+templates = Jinja2Templates(directory="app/datara/templates")
 
-# Home page
-@app.get("/", response_class=HTMLResponse)
+app.include_router(router)
+
+@app.get("/")
 def home():
-    return """
-    <html>
-    <head>
-        <title>ChronoSearch</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
-        <div class="container">
-            <h1>Welcome to ChronoSearch</h1>
-            <p>Upload and search your data easily</p>
-            <a class="btn" href="/upload">Go to Dashboard</a>
-        </div>
-    </body>
-    </html>
-    """
+    return {"message": "ChronoSearch running successfully 🚀"}

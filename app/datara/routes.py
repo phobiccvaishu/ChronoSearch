@@ -1,27 +1,32 @@
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Request, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 import pandas as pd
-from app.datara.search_engine import search_data
+import os
 
 router = APIRouter()
+templates = Jinja2Templates(directory="app/datara/templates")
 
-# In-memory storage for uploaded CSVs
-data_storage = {}
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.post("/upload")
-async def upload_csv(file: UploadFile):
-    """Upload a CSV file and store it temporarily in memory."""
-    try:
-        df = pd.read_csv(file.file)
-        data_storage[file.filename] = df
-        return {"message": f"{file.filename} uploaded successfully", "rows": len(df)}
-    except Exception as e:
-        return {"error": str(e)}
+@router.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "data": None, "columns": None})
 
-@router.get("/search")
-async def search(q: str, filename: str):
-    """Search for a keyword within the uploaded CSV."""
-    if filename not in data_storage:
-        return {"error": "File not found"}
-    df = data_storage[filename]
-    results = search_data(df, q)
-    return {"results": results[:10]}
+@router.post("/upload", response_class=HTMLResponse)
+async def upload_csv(request: Request, file: UploadFile):
+    file_location = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_location, "wb") as f:
+        f.write(await file.read())
+
+    df = pd.read_csv(file_location)
+    data = df.values.tolist()
+    columns = df.columns.tolist()
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "data": data,
+        "columns": columns,
+        "filename": file.filename
+    })
